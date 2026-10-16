@@ -1,0 +1,1088 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Espresso 1:2</title>
+<meta name="description" content="Carnet de shots d'espresso et conseils pour viser un ratio 1:2.">
+<meta name="theme-color" content="#3b2418">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon-192.png">
+<style>
+/* ---------- Couleurs (clair / sombre automatique) ---------- */
+:root {
+  --bg: #f6efe6; --surface: #fffaf3; --surface2: #efe3d3; --line: #e2d3c0;
+  --text: #2b1d14; --muted: #7a6656; --accent: #7b4a2a; --accent-ink: #fff;
+  --good: #2f7d4f; --good-bg: #dcefe2; --warn: #b8650f; --warn-bg: #f8e6cf;
+  --bad: #b3412f; --zone: #bfe0c9; --track: #e8dccb;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #16100c; --surface: #221913; --surface2: #2f241c; --line: #3c2f25;
+    --text: #f3e7d8; --muted: #b29c88; --accent: #d9a671; --accent-ink: #1d130c;
+    --good: #67c48f; --good-bg: #1d3326; --warn: #eaa452; --warn-bg: #3a2914;
+    --bad: #e8806e; --zone: #2c5039; --track: #3a2e25;
+    color-scheme: dark;
+  }
+}
+* { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+html, body { margin: 0; background: var(--bg); color: var(--text); }
+body {
+  font: 16px/1.4 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  padding-bottom: calc(76px + env(safe-area-inset-bottom));
+  overscroll-behavior-y: contain;
+}
+button { font: inherit; color: inherit; touch-action: manipulation; cursor: pointer; }
+.hidden { display: none !important; }
+.muted { color: var(--muted); }
+.small { font-size: 13px; }
+
+/* ---------- En-tête ---------- */
+header {
+  position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 8px;
+  padding: calc(10px + env(safe-area-inset-top)) 16px 10px; background: var(--bg);
+  border-bottom: 1px solid var(--line);
+}
+header h1 { font-size: 19px; margin: 0; flex: 1; letter-spacing: .2px; }
+.iconbtn { border: 0; background: none; color: inherit; font-size: 22px; line-height: 1; padding: 6px 4px; cursor: pointer; }
+dialog select { width: 100%; font: inherit; padding: 10px; border-radius: 10px; border: 1px solid var(--line); background: var(--surface); color: var(--text); }
+
+main { padding: 12px 16px 24px; max-width: 560px; margin: 0 auto; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: 18px; padding: 14px; margin-bottom: 12px; }
+.label { font-size: 13px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .6px; margin: 0 0 8px; }
+
+/* ---------- Cartes "meilleur réglage" ---------- */
+.carousel { display: flex; gap: 10px; overflow-x: auto; scroll-snap-type: x mandatory; margin: 0 -16px 12px; padding: 0 16px 4px; scrollbar-width: none; }
+.carousel::-webkit-scrollbar { display: none; }
+.best {
+  flex: 0 0 82%; scroll-snap-align: start; text-align: left; border: 1px solid var(--line);
+  background: var(--surface); border-radius: 18px; padding: 12px 14px;
+}
+.best.sel { border-color: var(--accent); box-shadow: 0 0 0 1px var(--accent) inset; }
+.best h3 { margin: 0 0 2px; font-size: 16px; }
+.best .reco { font-size: 15px; margin: 6px 0; }
+.best .reco b { font-size: 17px; }
+.best .stats { display: flex; gap: 12px; font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+.sparks { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.spark .t { font-size: 12px; color: var(--muted); display: flex; justify-content: space-between; }
+.spark svg { display: block; width: 100%; height: 34px; }
+
+/* ---------- Puces café ---------- */
+.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  border: 1px solid var(--line); background: var(--surface2); border-radius: 999px;
+  padding: 10px 14px; font-size: 15px; min-height: 44px;
+}
+.chip.sel { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+.chip.add { background: none; border-style: dashed; color: var(--muted); }
+.linkbtn { border: 0; background: none; color: var(--accent); padding: 8px 0 0; font-size: 14px; }
+
+/* ---------- Steppers ---------- */
+.row { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.row + .row { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); }
+.row .name { font-weight: 600; }
+.row .sub { font-size: 13px; color: var(--muted); }
+.stepper { display: flex; align-items: center; gap: 6px; }
+.stepper button, .bigstep {
+  width: 56px; height: 56px; border-radius: 16px; border: 0; background: var(--surface2);
+  font-size: 28px; line-height: 1; user-select: none; -webkit-user-select: none;
+}
+.stepper button:active, .bigstep:active { background: var(--line); }
+.stepper .val { min-width: 84px; text-align: center; white-space: nowrap; font-size: 24px; font-weight: 700; font-variant-numeric: tabular-nums; }
+.stepper .val small { font-size: 14px; font-weight: 500; color: var(--muted); }
+
+.timebox { display: flex; align-items: center; justify-content: space-between; }
+.bigstep { width: 68px; height: 68px; border-radius: 50%; }
+.bignum { font-size: 64px; font-weight: 800; font-variant-numeric: tabular-nums; line-height: 1; text-align: center; }
+.bignum small { font-size: 22px; font-weight: 600; color: var(--muted); }
+input[type=range] { width: 100%; margin: 16px 0 2px; accent-color: var(--accent); height: 32px; }
+.rangescale { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
+
+.liveratio { text-align: center; font-size: 15px; margin-top: 12px; color: var(--muted); }
+.liveratio b { color: var(--text); font-size: 18px; }
+
+.taste { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.taste button {
+  min-height: 60px; border-radius: 16px; border: 1px solid var(--line); background: var(--surface2);
+  font-size: 16px; font-weight: 600;
+}
+.taste button.sel { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+textarea, input[type=text], input[type=date] {
+  width: 100%; font: inherit; color: var(--text); background: var(--surface2); border: 1px solid var(--line);
+  border-radius: 12px; padding: 12px; resize: vertical;
+}
+.savebar { position: sticky; bottom: calc(76px + env(safe-area-inset-bottom)); padding-top: 6px; z-index: 5; }
+.primary {
+  width: 100%; min-height: 60px; border: 0; border-radius: 18px; background: var(--accent); color: var(--accent-ink);
+  font-size: 18px; font-weight: 700; box-shadow: 0 6px 18px rgb(0 0 0 / .18);
+}
+.primary:active { transform: scale(.99); }
+.secondary {
+  width: 100%; min-height: 52px; border: 1px solid var(--line); border-radius: 16px; background: var(--surface2);
+  font-size: 16px; font-weight: 600;
+}
+.danger { color: var(--bad); }
+.primary.danger { background: var(--bad); color: #fff; }
+.banner { background: var(--warn-bg); border-radius: 14px; padding: 12px 14px; margin-bottom: 12px; font-size: 14px; }
+.banner .secondary { margin-top: 10px; }
+.tip { font-size: 13px; color: var(--muted); text-align: center; padding: 8px 8px 0; }
+
+/* ---------- Onglets ---------- */
+nav.tabs {
+  position: fixed; left: 0; right: 0; bottom: 0; z-index: 20; display: grid; grid-template-columns: 1fr 1fr;
+  background: var(--surface); border-top: 1px solid var(--line); padding-bottom: env(safe-area-inset-bottom);
+}
+nav.tabs button { border: 0; background: none; height: 64px; font-size: 15px; font-weight: 600; color: var(--muted); }
+nav.tabs button span { display: block; font-size: 20px; line-height: 1.1; }
+nav.tabs button.sel { color: var(--accent); }
+
+/* ---------- Historique ---------- */
+.histhead { display: flex; gap: 8px; align-items: center; margin-bottom: 10px; }
+.histhead .chips { flex: 1; }
+.shot { padding: 12px 14px; }
+.shot .top { display: flex; justify-content: space-between; gap: 8px; }
+.shot .top b { font-size: 16px; }
+.shot .vals { display: flex; flex-wrap: wrap; gap: 4px 12px; margin: 6px 0 2px; font-variant-numeric: tabular-nums; }
+.shot .note { font-style: italic; color: var(--muted); font-size: 14px; margin-top: 4px; }
+.shot .acts { display: flex; gap: 8px; margin-top: 8px; }
+.shot .acts button { flex: 1; min-height: 40px; border-radius: 12px; border: 1px solid var(--line); background: var(--surface2); font-size: 14px; }
+.dot { display: inline-block; width: 9px; height: 9px; border-radius: 50%; margin-right: 4px; vertical-align: 1px; }
+.dot.ok { background: var(--good); } .dot.warn { background: var(--warn); }
+.welcome { flex: 1 0 100%; margin: 0; } .welcome h3 { margin: 0 0 6px; } .welcome p { margin: 6px 0; }
+.empty { text-align: center; color: var(--muted); padding: 32px 16px; }
+
+/* ---------- Résultat ---------- */
+.overlay { position: fixed; inset: 0; z-index: 30; background: var(--bg); overflow-y: auto; padding: calc(16px + env(safe-area-inset-top)) 16px calc(24px + env(safe-area-inset-bottom)); }
+.overlay .inner { max-width: 560px; margin: 0 auto; }
+.overlay h2 { margin: 4px 0 12px; font-size: 22px; }
+.metric { display: flex; justify-content: space-between; align-items: baseline; }
+.metric .v { font-size: 34px; font-weight: 800; font-variant-numeric: tabular-nums; }
+.status { font-size: 14px; font-weight: 600; padding: 4px 10px; border-radius: 999px; }
+.status.ok { color: var(--good); background: var(--good-bg); }
+.status.warn { color: var(--warn); background: var(--warn-bg); }
+.gauge { position: relative; height: 14px; border-radius: 7px; background: var(--track); margin: 10px 0 4px; }
+.gauge .zone { position: absolute; top: 0; bottom: 0; background: var(--zone); border-radius: 7px; }
+.gauge .mark { position: absolute; top: -5px; width: 8px; height: 24px; margin-left: -4px; border-radius: 4px; border: 2px solid var(--surface); }
+.gauge .mark.ok { background: var(--good); } .gauge .mark.warn { background: var(--warn); }
+.gscale { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); }
+.onlyone { background: var(--accent); color: var(--accent-ink); border-radius: 14px; padding: 12px 14px; font-weight: 600; margin-bottom: 12px; }
+.advice { counter-reset: a; list-style: none; padding: 0; margin: 0; }
+.advice li { position: relative; padding: 0 0 12px 36px; }
+.advice li + li { padding-top: 12px; border-top: 1px solid var(--line); }
+.advice li::before {
+  counter-increment: a; content: counter(a); position: absolute; left: 0; width: 26px; height: 26px; border-radius: 50%;
+  background: var(--surface2); text-align: center; line-height: 26px; font-weight: 700; font-size: 14px;
+}
+.advice li + li::before { top: 12px; }
+.advice b { display: block; }
+.advice .tag { font-size: 12px; color: var(--muted); }
+.recipe { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; margin-bottom: 12px; }
+.recipe div { background: var(--surface2); border-radius: 12px; padding: 10px 4px; }
+.recipe b { display: block; font-size: 20px; }
+.recipe span { font-size: 12px; color: var(--muted); }
+
+/* ---------- Dialogues / toast ---------- */
+dialog {
+  border: 0; border-radius: 22px; padding: 18px; width: min(92vw, 440px); background: var(--surface); color: var(--text);
+}
+dialog::backdrop { background: rgb(0 0 0 / .45); }
+dialog h3 { margin: 0 0 10px; font-size: 18px; }
+dialog .btns { display: flex; gap: 8px; margin-top: 16px; }
+#tabHist .btns { display: flex; gap: 8px; } #tabHist .btns button { flex: 1; }
+dialog .btns button { flex: 1; }
+dialog .field { margin-top: 12px; }
+dialog .field > div:first-child { font-size: 13px; color: var(--muted); margin-bottom: 6px; }
+dialog ul { padding-left: 20px; margin: 6px 0; }
+.toast {
+  position: fixed; left: 50%; bottom: calc(150px + env(safe-area-inset-bottom)); transform: translateX(-50%); z-index: 50;
+  background: var(--text); color: var(--bg); padding: 10px 16px; border-radius: 12px; font-size: 14px; max-width: 90vw;
+  opacity: 0; transition: opacity .2s; pointer-events: none;
+}
+.toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Espresso 1:2</h1>
+  <button id="settingsBtn" class="iconbtn" data-i18n-aria="settings">⚙</button>
+</header>
+
+<!-- ============ Onglet Shot ============ -->
+<main id="tabShot">
+  <div id="carousel" class="carousel"></div>
+
+  <div id="editBanner" class="banner hidden">
+    <span data-i18n-html="editingPre"></span> <span id="editWhen"></span>
+    <button class="secondary" id="cancelEdit" data-i18n="cancelEdit"></button>
+  </div>
+
+  <section class="card">
+    <p class="label" data-i18n="coffee"></p>
+    <div id="cafeChips" class="chips"></div>
+    <button id="editCafeBtn" class="linkbtn"></button>
+  </section>
+
+  <section class="card">
+    <div class="row">
+      <div><div class="name" data-i18n="dose"></div><div class="sub" data-i18n="doseSub"></div></div>
+      <div class="stepper"><button data-step="dose:-1" data-i18n-aria="less">−</button><div class="val" id="vDose"></div><button data-step="dose:1" data-i18n-aria="more">+</button></div>
+    </div>
+    <div class="row">
+      <div><div class="name" data-i18n="grinder"></div><div class="sub" id="vTours"></div></div>
+      <div class="stepper"><button data-step="clics:-1" data-i18n-aria="less">−</button><div class="val" id="vClics"></div><button data-step="clics:1" data-i18n-aria="more">+</button></div>
+    </div>
+  </section>
+
+  <section class="card">
+    <p class="label" data-i18n="extTime"></p>
+    <div class="timebox">
+      <button class="bigstep" data-step="temps:-1" data-i18n-aria="lessSec">−</button>
+      <div class="bignum" id="vTemps"></div>
+      <button class="bigstep" data-step="temps:1" data-i18n-aria="moreSec">+</button>
+    </div>
+    <input type="range" id="tempsRange" min="10" max="60" step="1" data-i18n-aria="extTime">
+    <div class="rangescale"><span>10 s</span><span data-i18n="target2530"></span><span>60 s</span></div>
+  </section>
+
+  <section class="card">
+    <div class="row">
+      <div><div class="name" data-i18n="inCup"></div><div class="sub" data-i18n="inCupSub"></div></div>
+      <div class="stepper"><button data-step="tasse:-1" data-i18n-aria="less">−</button><div class="val" id="vTasse"></div><button data-step="tasse:1" data-i18n-aria="more">+</button></div>
+    </div>
+    <div class="liveratio"><span data-i18n="ratio"></span> <b id="vRatio"></b> <span id="vRatioHint"></span></div>
+  </section>
+
+  <section class="card">
+    <p class="label"><span data-i18n="taste"></span> <span class="muted" style="text-transform:none;letter-spacing:0" data-i18n="optional"></span></p>
+    <div class="taste" id="tasteBtns">
+      <button data-gout="acide" data-i18n="sour"></button>
+      <button data-gout="équilibré" data-i18n="balanced"></button>
+      <button data-gout="amer" data-i18n="bitter"></button>
+    </div>
+    <p class="label" style="margin-top:14px"><span data-i18n="note"></span> <span class="muted" style="text-transform:none;letter-spacing:0" data-i18n="optional"></span></p>
+    <textarea id="note" rows="2" data-i18n-ph="notePh"></textarea>
+  </section>
+
+  <div class="savebar"><button class="primary" id="saveBtn"></button></div>
+  <p class="tip" id="formTip"></p>
+</main>
+
+<!-- ============ Onglet Historique ============ -->
+<main id="tabHist" class="hidden">
+  <div class="histhead">
+    <div class="chips" id="histFilter"></div>
+  </div>
+  <div class="btns" style="margin-bottom:12px">
+    <button class="secondary" id="csvBtn" data-i18n="exportCsv"></button>
+    <button class="secondary" id="csvImportBtn" data-i18n="importCsv"></button>
+  </div>
+  <input type="file" id="csvFile" accept=".csv,text/csv" hidden>
+  <div id="histList"></div>
+</main>
+
+<nav class="tabs">
+  <button id="tabBtnShot" class="sel"><span>☕</span><b data-i18n="tabShot" style="font-weight:inherit"></b></button>
+  <button id="tabBtnHist"><span>☰</span><b data-i18n="tabHist" style="font-weight:inherit"></b></button>
+</nav>
+
+<!-- ============ Résultat après enregistrement ============ -->
+<div id="result" class="overlay hidden" role="dialog" aria-modal="true" data-i18n-aria="resultAria">
+  <div class="inner" id="resultInner"></div>
+</div>
+
+<dialog id="dlg"></dialog>
+<div id="toast" class="toast"></div>
+
+<script>
+/* =====================================================================
+   0. Traductions (fr, en, es, zh, ja)
+   ===================================================================== */
+const LANGS = { fr: 'Français', en: 'English', es: 'Español', zh: '中文', ja: '日本語' };
+const I18N = {
+fr: {
+  appDesc: "Carnet de shots d'espresso et conseils pour viser un ratio 1:2.",
+  settings: 'Réglages', language: 'Langue', editingPre: '<b>Modification</b> du shot', cancelEdit: 'Annuler la modification',
+  coffee: 'Café', addCoffee: '+ Ajouter un café', editNamed: 'Modifier « {n} »',
+  dose: 'Dose', doseSub: 'grammes de café moulu', grinder: 'Mouture K6', less: 'Moins', more: 'Plus', lessSec: 'Moins une seconde', moreSec: 'Plus une seconde',
+  extTime: "Temps d'extraction", target2530: 'cible 25–30 s', inCup: 'En tasse', inCupSub: 'grammes de boisson', ratio: 'Ratio',
+  taste: 'Goût', optional: '(optionnel)', sour: 'Acide', balanced: 'Équilibré', bitter: 'Amer', note: 'Note', notePh: 'Ex. crema épaisse, après vapeur…',
+  saveShot: 'Enregistrer le shot', saveEdit: 'Enregistrer la modification', exportCsv: 'Exporter en CSV', importCsv: 'Importer un CSV',
+  tabShot: 'Shot', tabHist: 'Historique', resultAria: 'Résultat du shot',
+  clicks: { one: 'clic', other: 'clics' }, turns: { one: '{t} tour {r}', other: '{t} tours {r}' }, targetRange: '(cible 1:{lo}–{hi})',
+  editCoffeeT: 'Modifier le café', newCoffee: 'Nouveau café', name: 'Nom', roast: 'Torréfaction', roastDate: 'Date de torréfaction (optionnelle)',
+  cancel: 'Annuler', save: 'Enregistrer', deleteCoffee: 'Supprimer ce café', roast_claire: 'claire', roast_moyenne: 'moyenne', roast_foncee: 'foncée',
+  needName: 'Donne un nom au café.', coffeeExists: 'Ce café existe déjà.', deleteCoffeeQ: 'Supprimer « {n} » ?', deleteCoffeeBody: 'Les shots déjà enregistrés de ce café sont conservés.', delete: 'Supprimer', confirm: 'Confirmer', ok: 'OK',
+  chooseCoffee: 'Choisis un café', chooseCoffeeBody: 'Sélectionne ou ajoute un café avant d’enregistrer.', dose0: 'Dose à 0 g', dose0Body: 'La dose ne peut pas être 0 g. Corrige-la avant d’enregistrer.',
+  ratioBelow1: 'Ratio 1:{r}, inférieur à 1:1.', ratioAbove4: 'Ratio 1:{r}, supérieur à 1:4.', timeAbove60: 'Temps de {t} s, au-delà de 60 s.', confirmQ: 'Tu confirmes ?', unusual: 'Ces valeurs sont inhabituelles.', yesSave: 'Oui, enregistrer', shotEdited: 'Shot modifié',
+  whenEst: '≈ {tt} s pour {ty} g (estimé d’après {y} g en {t} s)',
+  chokedT: 'Shot étouffé', chokedX: 'Très peu de café en tasse ({y} g en {t} s). Mouds nettement plus gros : +3 à +4 clics → essaie {c} clics.',
+  fastT: 'Trop rapide ({w})', fastX: 'Mouds plus fin : −2 à −3 clics → essaie {c} clics.', sfastT: 'Un peu rapide ({w})', sfastX: 'Mouds un poil plus fin : −1 clic → {c} clics.',
+  slowT: 'Trop lent ({w})', slowX: 'Mouds plus gros : +2 à +3 clics → essaie {c} clics.', sslowT: 'Un peu lent ({w})', sslowX: 'Mouds un poil plus gros : +1 clic → {c} clics.',
+  lightFine: ' Café clair : il supporte bien une mouture fine.', darkCoarse: ' Café foncé : il préfère une mouture plus grosse.',
+  longT: 'Ratio trop long (1:{r})', longX: 'Arrête le shot plus tôt, vise {y} g en tasse.', shortT: 'Ratio trop court (1:{r})', shortX: 'Laisse couler jusqu’à {y} g.',
+  sourOkT: 'Acide alors que temps et ratio sont bons', sourOkX: 'Piste température : la machine n’est pas assez chaude. Laisse-la chauffer 15–20 min porte-filtre en place, fais un flush, puis lance le shot dès qu’elle a fini de chauffer (voyant).',
+  alsoSour: ' Ça corrigera aussi l’acidité.', alsoSourY: ' Ça réduira aussi l’acidité.', underT: 'Acide = sous-extrait', underX: 'Mouds 1 clic plus fin ({c} clics), ou sinon allonge le rendement à {y} g.', lightOk: ' Café clair : 1:{a}–{b} est tout à fait acceptable.',
+  bitterOkT: 'Amer alors que temps et ratio sont bons', bitterOkX: 'Piste température trop haute, surtout juste après la vapeur : purge longuement (10–15 s, jusqu’à ce que l’eau ne crachote plus) et attends 1 min avant le shot.',
+  alsoBitter: ' Ça corrigera aussi l’amertume.', alsoBitterY: ' Ça réduira aussi l’amertume.', overT: 'Amer = sur-extrait', overX: 'Mouds 1 clic plus gros ({c} clics), ou sinon raccourcis le rendement à {y} g.', darkAim: ' Café foncé : vise 1:{a}–{b}.',
+  inconsT: 'Résultats irréguliers au même réglage', inconsX: 'À {c} clics tu as eu {times} : piste préparation du gâteau (canalisation). WDT, distribution, tassage bien à plat.',
+  successT: 'Shot dans la cible', successBal: 'Équilibré et dans la cible : garde exactement cette recette.', successTaste: 'Goûte-le : s’il est équilibré, garde exactement cette recette.',
+  tips: ['Machine : laisse-la chauffer 15–20 min avec le porte-filtre en place.', 'Machine : fais un court flush (2–3 s) juste avant le shot.', 'Après la vapeur : purge longuement avant un nouveau shot, sinon l’eau est trop chaude.', 'Préparation : WDT (aiguilles) pour casser les mottes avant de tasser.', 'Préparation : tasse bien à plat, un gâteau penché favorise la canalisation.', 'Préparation : tasse et porte-filtre chauds avant de lancer le shot.', 'Café : idéalement entre 7 et 30 jours après la torréfaction.'],
+  young: { one: 'Café torréfié il y a {n} jour : encore un peu jeune, il sera meilleur à partir de 7 jours.', other: 'Café torréfié il y a {n} jours : encore un peu jeune, il sera meilleur à partir de 7 jours.' },
+  old: 'Café torréfié il y a {n} jours : il s’évente, mouds un peu plus fin. Idéal : 7 à 30 jours.',
+  inTarget: '✓ Dans la cible', tooLong: '▲ Trop long', tooShort: '▼ Trop court', tooSlow: '▲ Trop lent', tooFast: '▼ Trop rapide',
+  onlyOne: 'Ne change qu’UN paramètre au prochain shot : {p}.', keepDose: ' Garde la dose à {d} g et vise {y} g.', changeNothing: 'Ne change rien : refais la même recette.',
+  time: 'Temps', target: 'cible', advice: 'Conseils', paramTag: 'Paramètre : {p}', nextRecipe: 'Prochaine recette', doseLbl: 'dose', in2530: 'en 25–30 s', applyNext: 'Appliquer au prochain shot', close: 'Fermer', recipeApplied: 'Recette appliquée',
+  param_grind: 'la mouture', param_yield: 'le rendement', param_temp: 'la température', param_prep: 'la préparation',
+  best: 'Meilleur réglage', tapApply: ' · touche pour l’appliquer', noRef: 'Pas encore de shot de référence', nShots: { one: '{n} shot', other: '{n} shots' }, pctTarget: '{p} % dans la cible', bestApplied: 'Meilleur réglage appliqué',
+  welcomeT: 'Bienvenue 👋', welcomeX: 'Commence par <b>ajouter ton café</b> juste en dessous (nom et torréfaction), puis enregistre ton premier shot : l’app te dira quoi changer au suivant.', welcomeNote: 'Tes données restent sur ce téléphone. Pense à les exporter de temps en temps (Historique → Exporter en CSV).',
+  all: 'Tous', edit: 'Modifier', noShots: 'Aucun shot pour l’instant.', editWhen: 'du {d} à {h}', deleteShotQ: 'Supprimer ce shot ?',
+  badFile: 'Fichier non reconnu', badFileBody: 'Utilise un CSV exporté depuis l’app (Historique → Exporter en CSV).', imported: { one: '{n} shot importé', other: '{n} shots importés' }, noNew: 'Aucun nouveau shot',
+},
+en: {
+  appDesc: 'Espresso shot log with advice to hit a 1:2 ratio.',
+  settings: 'Settings', language: 'Language', editingPre: '<b>Editing</b> shot', cancelEdit: 'Cancel editing',
+  coffee: 'Coffee', addCoffee: '+ Add a coffee', editNamed: 'Edit “{n}”',
+  dose: 'Dose', doseSub: 'grams of ground coffee', grinder: 'K6 grind', less: 'Less', more: 'More', lessSec: 'One second less', moreSec: 'One second more',
+  extTime: 'Extraction time', target2530: 'target 25–30 s', inCup: 'Yield', inCupSub: 'grams in the cup', ratio: 'Ratio',
+  taste: 'Taste', optional: '(optional)', sour: 'Sour', balanced: 'Balanced', bitter: 'Bitter', note: 'Note', notePh: 'e.g. thick crema, after steaming…',
+  saveShot: 'Save shot', saveEdit: 'Save changes', exportCsv: 'Export CSV', importCsv: 'Import CSV',
+  tabShot: 'Shot', tabHist: 'History', resultAria: 'Shot result',
+  clicks: { one: 'click', other: 'clicks' }, turns: { one: '{t} turn {r}', other: '{t} turns {r}' }, targetRange: '(target 1:{lo}–{hi})',
+  editCoffeeT: 'Edit coffee', newCoffee: 'New coffee', name: 'Name', roast: 'Roast', roastDate: 'Roast date (optional)',
+  cancel: 'Cancel', save: 'Save', deleteCoffee: 'Delete this coffee', roast_claire: 'light', roast_moyenne: 'medium', roast_foncee: 'dark',
+  needName: 'Give the coffee a name.', coffeeExists: 'This coffee already exists.', deleteCoffeeQ: 'Delete “{n}”?', deleteCoffeeBody: 'Shots already saved for this coffee are kept.', delete: 'Delete', confirm: 'Confirm', ok: 'OK',
+  chooseCoffee: 'Pick a coffee', chooseCoffeeBody: 'Select or add a coffee before saving.', dose0: 'Dose is 0 g', dose0Body: 'The dose can’t be 0 g. Fix it before saving.',
+  ratioBelow1: 'Ratio 1:{r}, below 1:1.', ratioAbove4: 'Ratio 1:{r}, above 1:4.', timeAbove60: 'Time of {t} s, over 60 s.', confirmQ: 'Are you sure?', unusual: 'These values are unusual.', yesSave: 'Yes, save', shotEdited: 'Shot updated',
+  whenEst: '≈ {tt} s for {ty} g (estimated from {y} g in {t} s)',
+  chokedT: 'Choked shot', chokedX: 'Very little coffee in the cup ({y} g in {t} s). Grind much coarser: +3 to +4 clicks → try {c} clicks.',
+  fastT: 'Too fast ({w})', fastX: 'Grind finer: −2 to −3 clicks → try {c} clicks.', sfastT: 'A bit fast ({w})', sfastX: 'Grind slightly finer: −1 click → {c} clicks.',
+  slowT: 'Too slow ({w})', slowX: 'Grind coarser: +2 to +3 clicks → try {c} clicks.', sslowT: 'A bit slow ({w})', sslowX: 'Grind slightly coarser: +1 click → {c} clicks.',
+  lightFine: ' Light roast: it handles a fine grind well.', darkCoarse: ' Dark roast: it prefers a coarser grind.',
+  longT: 'Ratio too long (1:{r})', longX: 'Stop the shot earlier, aim for {y} g in the cup.', shortT: 'Ratio too short (1:{r})', shortX: 'Let it run to {y} g.',
+  sourOkT: 'Sour even though time and ratio are good', sourOkX: 'Likely temperature: the machine isn’t hot enough. Let it warm up 15–20 min with the portafilter locked in, do a flush, then pull the shot as soon as it finishes heating (light).',
+  alsoSour: ' This will also fix the sourness.', alsoSourY: ' This will also reduce the sourness.', underT: 'Sour = under-extracted', underX: 'Grind 1 click finer ({c} clicks), or else increase the yield to {y} g.', lightOk: ' Light roast: 1:{a}–{b} is perfectly fine.',
+  bitterOkT: 'Bitter even though time and ratio are good', bitterOkX: 'Likely temperature too high, especially right after steaming: purge for a while (10–15 s, until the water stops sputtering) and wait 1 min before the shot.',
+  alsoBitter: ' This will also fix the bitterness.', alsoBitterY: ' This will also reduce the bitterness.', overT: 'Bitter = over-extracted', overX: 'Grind 1 click coarser ({c} clicks), or else reduce the yield to {y} g.', darkAim: ' Dark roast: aim for 1:{a}–{b}.',
+  inconsT: 'Inconsistent results at the same setting', inconsX: 'At {c} clicks you got {times}: likely puck prep (channeling). WDT, distribution, level tamp.',
+  successT: 'Shot on target', successBal: 'Balanced and on target: keep this exact recipe.', successTaste: 'Taste it: if it’s balanced, keep this exact recipe.',
+  tips: ['Machine: let it warm up 15–20 min with the portafilter locked in.', 'Machine: do a short flush (2–3 s) right before the shot.', 'After steaming: purge for a while before the next shot, or the water will be too hot.', 'Prep: use WDT (needles) to break up clumps before tamping.', 'Prep: tamp level — a tilted puck encourages channeling.', 'Prep: warm cup and portafilter before pulling the shot.', 'Coffee: ideally 7 to 30 days after roasting.'],
+  young: { one: 'Roasted {n} day ago: still a bit young, it will taste better after 7 days.', other: 'Roasted {n} days ago: still a bit young, it will taste better after 7 days.' },
+  old: 'Roasted {n} days ago: it’s going stale, grind a little finer. Best: 7 to 30 days.',
+  inTarget: '✓ On target', tooLong: '▲ Too long', tooShort: '▼ Too short', tooSlow: '▲ Too slow', tooFast: '▼ Too fast',
+  onlyOne: 'Change only ONE variable on the next shot: {p}.', keepDose: ' Keep the dose at {d} g and aim for {y} g.', changeNothing: 'Change nothing: repeat the same recipe.',
+  time: 'Time', target: 'target', advice: 'Advice', paramTag: 'Variable: {p}', nextRecipe: 'Next recipe', doseLbl: 'dose', in2530: 'in 25–30 s', applyNext: 'Apply to next shot', close: 'Close', recipeApplied: 'Recipe applied',
+  param_grind: 'grind', param_yield: 'yield', param_temp: 'temperature', param_prep: 'puck prep',
+  best: 'Best setting', tapApply: ' · tap to apply', noRef: 'No reference shot yet', nShots: { one: '{n} shot', other: '{n} shots' }, pctTarget: '{p}% on target', bestApplied: 'Best setting applied',
+  welcomeT: 'Welcome 👋', welcomeX: 'Start by <b>adding your coffee</b> just below (name and roast), then save your first shot: the app will tell you what to change on the next one.', welcomeNote: 'Your data stays on this phone. Remember to export it from time to time (History → Export CSV).',
+  all: 'All', edit: 'Edit', noShots: 'No shots yet.', editWhen: 'from {d} at {h}', deleteShotQ: 'Delete this shot?',
+  badFile: 'File not recognized', badFileBody: 'Use a CSV exported from the app (History → Export CSV).', imported: { one: '{n} shot imported', other: '{n} shots imported' }, noNew: 'No new shots',
+},
+es: {
+  appDesc: 'Registro de shots de espresso con consejos para lograr un ratio 1:2.',
+  settings: 'Ajustes', language: 'Idioma', editingPre: '<b>Editando</b> el shot', cancelEdit: 'Cancelar la edición',
+  coffee: 'Café', addCoffee: '+ Añadir un café', editNamed: 'Editar «{n}»',
+  dose: 'Dosis', doseSub: 'gramos de café molido', grinder: 'Molienda K6', less: 'Menos', more: 'Más', lessSec: 'Un segundo menos', moreSec: 'Un segundo más',
+  extTime: 'Tiempo de extracción', target2530: 'objetivo 25–30 s', inCup: 'En taza', inCupSub: 'gramos de bebida', ratio: 'Ratio',
+  taste: 'Sabor', optional: '(opcional)', sour: 'Ácido', balanced: 'Equilibrado', bitter: 'Amargo', note: 'Nota', notePh: 'Ej. crema espesa, después del vapor…',
+  saveShot: 'Guardar el shot', saveEdit: 'Guardar los cambios', exportCsv: 'Exportar CSV', importCsv: 'Importar CSV',
+  tabShot: 'Shot', tabHist: 'Historial', resultAria: 'Resultado del shot',
+  clicks: { one: 'clic', other: 'clics' }, turns: { one: '{t} vuelta {r}', other: '{t} vueltas {r}' }, targetRange: '(objetivo 1:{lo}–{hi})',
+  editCoffeeT: 'Editar el café', newCoffee: 'Nuevo café', name: 'Nombre', roast: 'Tueste', roastDate: 'Fecha de tueste (opcional)',
+  cancel: 'Cancelar', save: 'Guardar', deleteCoffee: 'Eliminar este café', roast_claire: 'claro', roast_moyenne: 'medio', roast_foncee: 'oscuro',
+  needName: 'Ponle un nombre al café.', coffeeExists: 'Este café ya existe.', deleteCoffeeQ: '¿Eliminar «{n}»?', deleteCoffeeBody: 'Los shots ya guardados de este café se conservan.', delete: 'Eliminar', confirm: 'Confirmar', ok: 'OK',
+  chooseCoffee: 'Elige un café', chooseCoffeeBody: 'Selecciona o añade un café antes de guardar.', dose0: 'Dosis de 0 g', dose0Body: 'La dosis no puede ser 0 g. Corrígela antes de guardar.',
+  ratioBelow1: 'Ratio 1:{r}, menor que 1:1.', ratioAbove4: 'Ratio 1:{r}, mayor que 1:4.', timeAbove60: 'Tiempo de {t} s, más de 60 s.', confirmQ: '¿Confirmas?', unusual: 'Estos valores son poco habituales.', yesSave: 'Sí, guardar', shotEdited: 'Shot modificado',
+  whenEst: '≈ {tt} s para {ty} g (estimado a partir de {y} g en {t} s)',
+  chokedT: 'Shot ahogado', chokedX: 'Muy poco café en la taza ({y} g en {t} s). Muele bastante más grueso: +3 a +4 clics → prueba {c} clics.',
+  fastT: 'Demasiado rápido ({w})', fastX: 'Muele más fino: −2 a −3 clics → prueba {c} clics.', sfastT: 'Un poco rápido ({w})', sfastX: 'Muele un poco más fino: −1 clic → {c} clics.',
+  slowT: 'Demasiado lento ({w})', slowX: 'Muele más grueso: +2 a +3 clics → prueba {c} clics.', sslowT: 'Un poco lento ({w})', sslowX: 'Muele un poco más grueso: +1 clic → {c} clics.',
+  lightFine: ' Tueste claro: tolera bien una molienda fina.', darkCoarse: ' Tueste oscuro: prefiere una molienda más gruesa.',
+  longT: 'Ratio demasiado largo (1:{r})', longX: 'Corta el shot antes, apunta a {y} g en taza.', shortT: 'Ratio demasiado corto (1:{r})', shortX: 'Déjalo correr hasta {y} g.',
+  sourOkT: 'Ácido aunque el tiempo y el ratio son buenos', sourOkX: 'Probablemente la temperatura: la máquina no está lo bastante caliente. Déjala calentar 15–20 min con el portafiltro puesto, haz un purgado y lanza el shot en cuanto termine de calentar (piloto).',
+  alsoSour: ' Esto también corregirá la acidez.', alsoSourY: ' Esto también reducirá la acidez.', underT: 'Ácido = subextraído', underX: 'Muele 1 clic más fino ({c} clics) o, si no, alarga el rendimiento a {y} g.', lightOk: ' Tueste claro: 1:{a}–{b} es perfectamente aceptable.',
+  bitterOkT: 'Amargo aunque el tiempo y el ratio son buenos', bitterOkX: 'Probablemente temperatura demasiado alta, sobre todo justo después del vapor: purga un buen rato (10–15 s, hasta que el agua deje de chisporrotear) y espera 1 min antes del shot.',
+  alsoBitter: ' Esto también corregirá el amargor.', alsoBitterY: ' Esto también reducirá el amargor.', overT: 'Amargo = sobreextraído', overX: 'Muele 1 clic más grueso ({c} clics) o, si no, acorta el rendimiento a {y} g.', darkAim: ' Tueste oscuro: apunta a 1:{a}–{b}.',
+  inconsT: 'Resultados irregulares con el mismo ajuste', inconsX: 'A {c} clics obtuviste {times}: revisa la preparación de la pastilla (canalización). WDT, distribución, prensado bien nivelado.',
+  successT: 'Shot en el objetivo', successBal: 'Equilibrado y en el objetivo: mantén exactamente esta receta.', successTaste: 'Pruébalo: si está equilibrado, mantén exactamente esta receta.',
+  tips: ['Máquina: déjala calentar 15–20 min con el portafiltro puesto.', 'Máquina: haz un purgado corto (2–3 s) justo antes del shot.', 'Después del vapor: purga un buen rato antes de otro shot, si no el agua estará demasiado caliente.', 'Preparación: WDT (agujas) para deshacer los grumos antes de prensar.', 'Preparación: prensa bien nivelado; una pastilla inclinada favorece la canalización.', 'Preparación: taza y portafiltro calientes antes de lanzar el shot.', 'Café: idealmente entre 7 y 30 días después del tueste.'],
+  young: { one: 'Café tostado hace {n} día: todavía algo joven, estará mejor a partir de 7 días.', other: 'Café tostado hace {n} días: todavía algo joven, estará mejor a partir de 7 días.' },
+  old: 'Café tostado hace {n} días: se está oxidando, muele un poco más fino. Ideal: 7 a 30 días.',
+  inTarget: '✓ En el objetivo', tooLong: '▲ Demasiado largo', tooShort: '▼ Demasiado corto', tooSlow: '▲ Demasiado lento', tooFast: '▼ Demasiado rápido',
+  onlyOne: 'Cambia solo UN parámetro en el próximo shot: {p}.', keepDose: ' Mantén la dosis en {d} g y apunta a {y} g.', changeNothing: 'No cambies nada: repite la misma receta.',
+  time: 'Tiempo', target: 'objetivo', advice: 'Consejos', paramTag: 'Parámetro: {p}', nextRecipe: 'Próxima receta', doseLbl: 'dosis', in2530: 'en 25–30 s', applyNext: 'Aplicar al próximo shot', close: 'Cerrar', recipeApplied: 'Receta aplicada',
+  param_grind: 'la molienda', param_yield: 'el rendimiento', param_temp: 'la temperatura', param_prep: 'la preparación',
+  best: 'Mejor ajuste', tapApply: ' · toca para aplicarlo', noRef: 'Aún no hay shot de referencia', nShots: { one: '{n} shot', other: '{n} shots' }, pctTarget: '{p} % en el objetivo', bestApplied: 'Mejor ajuste aplicado',
+  welcomeT: 'Bienvenido 👋', welcomeX: 'Empieza por <b>añadir tu café</b> justo debajo (nombre y tueste) y guarda tu primer shot: la app te dirá qué cambiar en el siguiente.', welcomeNote: 'Tus datos se quedan en este teléfono. Acuérdate de exportarlos de vez en cuando (Historial → Exportar CSV).',
+  all: 'Todos', edit: 'Editar', noShots: 'Todavía no hay shots.', editWhen: 'del {d} a las {h}', deleteShotQ: '¿Eliminar este shot?',
+  badFile: 'Archivo no reconocido', badFileBody: 'Usa un CSV exportado desde la app (Historial → Exportar CSV).', imported: { one: '{n} shot importado', other: '{n} shots importados' }, noNew: 'Ningún shot nuevo',
+},
+zh: {
+  appDesc: '意式浓缩萃取记录，帮你达到 1:2 的粉水比。',
+  settings: '设置', language: '语言', editingPre: '<b>正在编辑</b>记录', cancelEdit: '取消编辑',
+  coffee: '咖啡豆', addCoffee: '+ 添加咖啡豆', editNamed: '编辑「{n}」',
+  dose: '粉量', doseSub: '咖啡粉克数', grinder: 'K6 研磨度', less: '减少', more: '增加', lessSec: '减少一秒', moreSec: '增加一秒',
+  extTime: '萃取时间', target2530: '目标 25–30 秒', inCup: '液重', inCupSub: '杯中饮品克数', ratio: '粉液比',
+  taste: '风味', optional: '（可选）', sour: '偏酸', balanced: '平衡', bitter: '偏苦', note: '备注', notePh: '例：油脂厚实、打奶后…',
+  saveShot: '保存记录', saveEdit: '保存修改', exportCsv: '导出 CSV', importCsv: '导入 CSV',
+  tabShot: '萃取', tabHist: '历史', resultAria: '萃取结果',
+  clicks: { other: '格' }, turns: { other: '{t} 圈 {r}' }, targetRange: '（目标 1:{lo}–{hi}）',
+  editCoffeeT: '编辑咖啡豆', newCoffee: '新咖啡豆', name: '名称', roast: '烘焙度', roastDate: '烘焙日期（可选）',
+  cancel: '取消', save: '保存', deleteCoffee: '删除此咖啡豆', roast_claire: '浅烘', roast_moyenne: '中烘', roast_foncee: '深烘',
+  needName: '请为咖啡豆命名。', coffeeExists: '该咖啡豆已存在。', deleteCoffeeQ: '删除「{n}」？', deleteCoffeeBody: '该咖啡豆已保存的记录会保留。', delete: '删除', confirm: '确认', ok: '好',
+  chooseCoffee: '请选择咖啡豆', chooseCoffeeBody: '保存前请选择或添加一款咖啡豆。', dose0: '粉量为 0 克', dose0Body: '粉量不能为 0 克，请修改后再保存。',
+  ratioBelow1: '粉液比 1:{r}，低于 1:1。', ratioAbove4: '粉液比 1:{r}，高于 1:4。', timeAbove60: '时间 {t} 秒，超过 60 秒。', confirmQ: '确定吗？', unusual: '这些数值不太常见。', yesSave: '是的，保存', shotEdited: '记录已修改',
+  whenEst: '≈ {ty} 克约需 {tt} 秒（根据 {t} 秒 {y} 克估算）',
+  chokedT: '萃取堵塞', chokedX: '杯中咖啡极少（{t} 秒 {y} 克）。明显调粗：+3 到 +4 格 → 试试 {c} 格。',
+  fastT: '太快（{w}）', fastX: '调细：−2 到 −3 格 → 试试 {c} 格。', sfastT: '略快（{w}）', sfastX: '稍微调细：−1 格 → {c} 格。',
+  slowT: '太慢（{w}）', slowX: '调粗：+2 到 +3 格 → 试试 {c} 格。', sslowT: '略慢（{w}）', sslowX: '稍微调粗：+1 格 → {c} 格。',
+  lightFine: ' 浅烘豆：可以接受较细的研磨。', darkCoarse: ' 深烘豆：更适合较粗的研磨。',
+  longT: '粉液比过长（1:{r}）', longX: '提前停止萃取，目标杯中 {y} 克。', shortT: '粉液比过短（1:{r}）', shortX: '让它流到 {y} 克。',
+  sourOkT: '时间和粉液比都对，但偏酸', sourOkX: '可能是温度问题：机器不够热。装好手柄预热 15–20 分钟，放一下水，加热指示灯一灭就开始萃取。',
+  alsoSour: ' 这也能改善酸味。', alsoSourY: ' 这也能减轻酸味。', underT: '偏酸 = 萃取不足', underX: '调细 1 格（{c} 格），或者把液重增加到 {y} 克。', lightOk: ' 浅烘豆：1:{a}–{b} 完全可以接受。',
+  bitterOkT: '时间和粉液比都对，但偏苦', bitterOkX: '可能温度过高，尤其是刚打完奶：多放水（10–15 秒，直到不再喷溅），等 1 分钟再萃取。',
+  alsoBitter: ' 这也能改善苦味。', alsoBitterY: ' 这也能减轻苦味。', overT: '偏苦 = 过度萃取', overX: '调粗 1 格（{c} 格），或者把液重减少到 {y} 克。', darkAim: ' 深烘豆：目标 1:{a}–{b}。',
+  inconsT: '相同设置下结果不稳定', inconsX: '在 {c} 格时你得到了 {times}：可能是布粉问题（通道效应）。用 WDT 布粉、均匀分布、压粉保持水平。',
+  successT: '达到目标', successBal: '风味平衡且达标：保持这个配方。', successTaste: '尝一尝：如果风味平衡，就保持这个配方。',
+  tips: ['机器：装好手柄预热 15–20 分钟。', '机器：萃取前先短暂放水（2–3 秒）。', '打奶后：下一次萃取前多放水，否则水温过高。', '布粉：压粉前用 WDT（针）打散结块。', '布粉：压粉要水平，粉饼倾斜容易产生通道。', '准备：萃取前预热杯子和手柄。', '咖啡豆：最好在烘焙后 7 到 30 天内使用。'],
+  young: { other: '烘焙于 {n} 天前：还有点新，7 天后风味更好。' },
+  old: '烘焙于 {n} 天前：开始走味，研磨稍微调细。最佳：7 到 30 天。',
+  inTarget: '✓ 达标', tooLong: '▲ 过长', tooShort: '▼ 过短', tooSlow: '▲ 太慢', tooFast: '▼ 太快',
+  onlyOne: '下一次只改变一个参数：{p}。', keepDose: ' 粉量保持 {d} 克，目标 {y} 克。', changeNothing: '什么都不用改：重复同样的配方。',
+  time: '时间', target: '目标', advice: '建议', paramTag: '参数：{p}', nextRecipe: '下一次配方', doseLbl: '粉量', in2530: '25–30 秒内', applyNext: '应用到下一次', close: '关闭', recipeApplied: '已应用配方',
+  param_grind: '研磨度', param_yield: '液重', param_temp: '温度', param_prep: '布粉',
+  best: '最佳设置', tapApply: ' · 点击应用', noRef: '还没有参考记录', nShots: { other: '{n} 次' }, pctTarget: '{p}% 达标', bestApplied: '已应用最佳设置',
+  welcomeT: '欢迎 👋', welcomeX: '先在下方<b>添加你的咖啡豆</b>（名称和烘焙度），然后保存第一次萃取：应用会告诉你下一次该调整什么。', welcomeNote: '数据只保存在这部手机上。记得不时导出（历史 → 导出 CSV）。',
+  all: '全部', edit: '编辑', noShots: '还没有记录。', editWhen: '{d} {h}', deleteShotQ: '删除这条记录？',
+  badFile: '无法识别文件', badFileBody: '请使用从本应用导出的 CSV（历史 → 导出 CSV）。', imported: { other: '已导入 {n} 条记录' }, noNew: '没有新记录',
+},
+ja: {
+  appDesc: 'エスプレッソの抽出記録と、比率 1:2 を目指すためのアドバイス。',
+  settings: '設定', language: '言語', editingPre: '記録を<b>編集中</b>', cancelEdit: '編集をキャンセル',
+  coffee: 'コーヒー豆', addCoffee: '+ 豆を追加', editNamed: '「{n}」を編集',
+  dose: 'ドーズ', doseSub: '挽いた粉のグラム数', grinder: 'K6 挽き目', less: '減らす', more: '増やす', lessSec: '1秒減らす', moreSec: '1秒増やす',
+  extTime: '抽出時間', target2530: '目標 25–30 秒', inCup: '抽出量', inCupSub: 'カップ内のグラム数', ratio: '比率',
+  taste: '味', optional: '（任意）', sour: '酸っぱい', balanced: 'バランス良い', bitter: '苦い', note: 'メモ', notePh: '例：クレマが厚い、スチーム後…',
+  saveShot: '記録を保存', saveEdit: '変更を保存', exportCsv: 'CSV を書き出す', importCsv: 'CSV を読み込む',
+  tabShot: '抽出', tabHist: '履歴', resultAria: '抽出結果',
+  clicks: { other: 'クリック' }, turns: { other: '{t} 回転 {r}' }, targetRange: '（目標 1:{lo}–{hi}）',
+  editCoffeeT: '豆を編集', newCoffee: '新しい豆', name: '名前', roast: '焙煎度', roastDate: '焙煎日（任意）',
+  cancel: 'キャンセル', save: '保存', deleteCoffee: 'この豆を削除', roast_claire: '浅煎り', roast_moyenne: '中煎り', roast_foncee: '深煎り',
+  needName: '豆に名前を付けてください。', coffeeExists: 'この豆はすでにあります。', deleteCoffeeQ: '「{n}」を削除しますか？', deleteCoffeeBody: 'この豆で保存済みの記録は残ります。', delete: '削除', confirm: '確認', ok: 'OK',
+  chooseCoffee: '豆を選んでください', chooseCoffeeBody: '保存する前に豆を選ぶか追加してください。', dose0: 'ドーズが 0 g', dose0Body: 'ドーズを 0 g にはできません。修正してから保存してください。',
+  ratioBelow1: '比率 1:{r}、1:1 未満です。', ratioAbove4: '比率 1:{r}、1:4 を超えています。', timeAbove60: '時間 {t} 秒、60 秒を超えています。', confirmQ: 'よろしいですか？', unusual: '珍しい数値です。', yesSave: 'はい、保存', shotEdited: '記録を更新しました',
+  whenEst: '{ty} g なら ≈ {tt} 秒（{t} 秒で {y} g から推定）',
+  chokedT: '詰まった抽出', chokedX: 'カップにほとんど出ていません（{t} 秒で {y} g）。かなり粗く：+3〜+4 クリック → {c} クリックを試して。',
+  fastT: '速すぎ（{w}）', fastX: '細かく：−2〜−3 クリック → {c} クリックを試して。', sfastT: 'やや速い（{w}）', sfastX: '少し細かく：−1 クリック → {c} クリック。',
+  slowT: '遅すぎ（{w}）', slowX: '粗く：+2〜+3 クリック → {c} クリックを試して。', sslowT: 'やや遅い（{w}）', sslowX: '少し粗く：+1 クリック → {c} クリック。',
+  lightFine: ' 浅煎り：細挽きにもよく合います。', darkCoarse: ' 深煎り：粗めの挽き目が向いています。',
+  longT: '比率が長すぎ（1:{r}）', longX: '早めに止めて、カップで {y} g を目指して。', shortT: '比率が短すぎ（1:{r}）', shortX: '{y} g まで抽出して。',
+  sourOkT: '時間も比率も良いのに酸っぱい', sourOkX: '温度の可能性：マシンが十分温まっていません。ポルタフィルターを付けたまま 15–20 分予熱し、フラッシュしてから、加熱ランプが消えたらすぐ抽出して。',
+  alsoSour: ' 酸味も改善します。', alsoSourY: ' 酸味も和らぎます。', underT: '酸っぱい = 抽出不足', underX: '1 クリック細かく（{c} クリック）、または抽出量を {y} g に増やして。', lightOk: ' 浅煎り：1:{a}–{b} でも問題ありません。',
+  bitterOkT: '時間も比率も良いのに苦い', bitterOkX: '温度が高すぎる可能性、特にスチーム直後：しっかり湯を流し（10–15 秒、はねなくなるまで）、1 分待ってから抽出して。',
+  alsoBitter: ' 苦味も改善します。', alsoBitterY: ' 苦味も和らぎます。', overT: '苦い = 過抽出', overX: '1 クリック粗く（{c} クリック）、または抽出量を {y} g に減らして。', darkAim: ' 深煎り：1:{a}–{b} を目指して。',
+  inconsT: '同じ設定で結果がばらつく', inconsX: '{c} クリックで {times} でした：パックの準備（チャネリング）を見直して。WDT、レベリング、水平なタンピング。',
+  successT: '目標どおり', successBal: 'バランス良く目標どおり：このレシピをそのまま続けて。', successTaste: '味見して：バランスが良ければ、このレシピをそのまま続けて。',
+  tips: ['マシン：ポルタフィルターを付けたまま 15–20 分予熱して。', 'マシン：抽出直前に短くフラッシュ（2–3 秒）して。', 'スチーム後：次の抽出の前にしっかり湯を流して。そうしないと湯温が高すぎます。', '準備：タンピング前に WDT（針）でダマをほぐして。', '準備：水平にタンピング。傾いたパックはチャネリングの原因に。', '準備：抽出前にカップとポルタフィルターを温めて。', '豆：焙煎後 7〜30 日が理想。'],
+  young: { other: '焙煎から {n} 日：まだ少し若いです。7 日以降がおすすめ。' },
+  old: '焙煎から {n} 日：風味が落ちてきています。少し細かく挽いて。理想：7〜30 日。',
+  inTarget: '✓ 目標内', tooLong: '▲ 長すぎ', tooShort: '▼ 短すぎ', tooSlow: '▲ 遅すぎ', tooFast: '▼ 速すぎ',
+  onlyOne: '次の抽出で変えるのは 1 つだけ：{p}。', keepDose: ' ドーズは {d} g のまま、{y} g を目指して。', changeNothing: '何も変えずに、同じレシピでもう一度。',
+  time: '時間', target: '目標', advice: 'アドバイス', paramTag: '変える項目：{p}', nextRecipe: '次のレシピ', doseLbl: 'ドーズ', in2530: '25–30 秒で', applyNext: '次の抽出に適用', close: '閉じる', recipeApplied: 'レシピを適用しました',
+  param_grind: '挽き目', param_yield: '抽出量', param_temp: '温度', param_prep: 'パックの準備',
+  best: 'ベスト設定', tapApply: ' · タップで適用', noRef: 'まだ基準となる記録がありません', nShots: { other: '{n} ショット' }, pctTarget: '{p}% が目標内', bestApplied: 'ベスト設定を適用しました',
+  welcomeT: 'ようこそ 👋', welcomeX: 'まず下で<b>コーヒー豆を追加</b>（名前と焙煎度）し、最初の抽出を保存してください。次に何を変えればいいかアプリが教えてくれます。', welcomeNote: 'データはこのスマホにだけ保存されます。ときどき書き出しておきましょう（履歴 → CSV を書き出す）。',
+  all: 'すべて', edit: '編集', noShots: 'まだ記録がありません。', editWhen: '{d} {h}', deleteShotQ: 'この記録を削除しますか？',
+  badFile: 'ファイルを認識できません', badFileBody: 'このアプリから書き出した CSV を使ってください（履歴 → CSV を書き出す）。', imported: { other: '{n} 件の記録を読み込みました' }, noNew: '新しい記録はありません',
+},
+};
+const pickLang = () => { for (const l of navigator.languages || [navigator.language || 'en']) { const k = String(l).slice(0, 2).toLowerCase(); if (I18N[k]) return k; } return 'en'; };
+let LANG = 'en';
+const pr = (n) => { try { return new Intl.PluralRules(LANG).select(n); } catch { return n === 1 ? 'one' : 'other'; } };
+function t(key, p = {}) {
+  let v = I18N[LANG][key] ?? I18N.en[key] ?? key;
+  if (v && typeof v === 'object' && !Array.isArray(v)) v = v[pr(p.n ?? 0)] ?? v.other;
+  return typeof v === 'string' ? v.replace(/\{(\w+)\}/g, (m, k) => (k in p ? p[k] : m)) : v;
+}
+function applyStatic() {
+  document.documentElement.lang = LANG;
+  document.querySelector('meta[name="description"]').content = t('appDesc');
+  document.querySelectorAll('[data-i18n]').forEach((e) => { e.textContent = t(e.dataset.i18n); });
+  document.querySelectorAll('[data-i18n-html]').forEach((e) => { e.innerHTML = t(e.dataset.i18nHtml); });
+  document.querySelectorAll('[data-i18n-aria]').forEach((e) => { e.setAttribute('aria-label', t(e.dataset.i18nAria)); });
+  document.querySelectorAll('[data-i18n-ph]').forEach((e) => { e.placeholder = t(e.dataset.i18nPh); });
+}
+
+/* =====================================================================
+   1. Constantes (tout est stocké sur le téléphone, rien n'est envoyé ailleurs)
+   ===================================================================== */
+const HEADER = ['id', 'date', 'heure', 'cafe', 'torrefaction', 'dose_g', 'tasse_g', 'ratio', 'temps_s', 'clics_k6', 'gout', 'note']; // colonnes de l'export CSV
+const TIME_LO = 25, TIME_HI = 30;
+const PREINF = 6; // secondes approximatives avant les premières gouttes (sert à estimer le temps à 1:2)
+
+/* =====================================================================
+   2. Stockage local (sur le téléphone)
+   ===================================================================== */
+const load = (k, d) => { try { const v = localStorage.getItem('esx.' + k); return v ? JSON.parse(v) : d; } catch { return d; } };
+const save = (k, v) => { try { localStorage.setItem('esx.' + k, JSON.stringify(v)); } catch {} };
+
+let shots = load('shots', []);
+// Liste des cafés : vide pour un nouvel utilisateur. Si elle n'a jamais été enregistrée
+// mais qu'il existe des shots, on la reconstruit à partir des shots (aucune donnée perdue).
+let cafes = load('cafes', null) || [...new Map(shots.map((s) => [s.cafe, { nom: s.cafe, torrefaction: s.torrefaction || 'moyenne', date: '' }])).values()];
+let next = load('next', {});         // "prochaine recette" par café
+let S = load('settings', { cafe: '', tipIdx: 0 });
+LANG = I18N[S.lang] ? S.lang : pickLang();
+const saveAll = () => { save('cafes', cafes); save('shots', shots); save('next', next); save('settings', S); };
+
+/* =====================================================================
+   3. Petits utilitaires
+   ===================================================================== */
+const $ = (id) => document.getElementById(id);
+const pad = (n) => String(n).padStart(2, '0');
+const fr = (n, d = 1) => { const x = Number(n).toFixed(d); return ['fr', 'es'].includes(LANG) ? x.replace('.', ',') : x; };
+const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
+const today = () => { const d = new Date(); return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`; };
+const nowHM = () => { const d = new Date(); return `${pad(d.getHours())}:${pad(d.getMinutes())}`; };
+const norm = (s) => String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+const ratioOf = (s) => (s.dose > 0 ? s.tasse / s.dose : 0);
+const sortKey = (s) => `${s.date} ${s.heure}`;
+const tours = (c) => { const n = Math.floor(c / 60), r = c % 60; return t('turns', { n, t: n, r }); };
+const clk = (c) => `${c} ${t('clicks', { n: c })}`;
+const dateFr = (d) => (d ? new Date(d + 'T12:00').toLocaleDateString(LANG, { day: '2-digit', month: '2-digit' }) : '');
+const roastLabel = { claire: 'claire', moyenne: 'moyenne', foncee: 'foncée' }; // valeurs stockées (internes)
+const roastName = (r) => t('roast_' + (norm(r) || 'moyenne'));
+const goutKey = { acide: 'sour', equilibre: 'balanced', amer: 'bitter' };
+const goutName = (g) => (goutKey[norm(g)] ? t(goutKey[norm(g)]) : g);
+
+function toast(msg) {
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), 2600);
+}
+
+// Cible de ratio selon la torréfaction
+function profile(roast) {
+  const r = norm(roast);
+  if (r === 'claire') return { lo: 1.8, hi: 2.5, target: 2.0, light: true };
+  if (r === 'foncee') return { lo: 1.8, hi: 2.0, target: 1.9, dark: true };
+  return { lo: 1.8, hi: 2.2, target: 2.0 };
+}
+const cafeByName = (n) => cafes.find((c) => c.nom === n);
+const roastOf = (shot) => shot.torrefaction || cafeByName(shot.cafe)?.torrefaction || 'moyenne';
+const inTarget = (s) => { const p = profile(roastOf(s)), R = ratioOf(s); return R >= p.lo && R <= p.hi && s.temps >= TIME_LO && s.temps <= TIME_HI; };
+const shotsOf = (cafe) => shots.filter((s) => s.cafe === cafe).sort((a, b) => sortKey(a).localeCompare(sortKey(b)));
+
+/* =====================================================================
+   4. Formulaire de saisie
+   ===================================================================== */
+const F = { cafe: '', dose: 180, clics: 30, temps: 28, tasse: 36, gout: '', note: '' }; // dose en dixièmes de gramme
+let editingId = null;
+
+function prefill(cafe) {
+  F.cafe = cafe; S.cafe = cafe;
+  const rec = next[cafe];
+  const last = shotsOf(cafe).at(-1);
+  const src = rec || last;
+  if (src) {
+    F.dose = Math.round(src.dose * 10); F.clics = src.clics; F.tasse = Math.round(src.tasse);
+    F.temps = rec ? 28 : src.temps;
+  } else { F.dose = 180; F.clics = 30; F.temps = 28; F.tasse = 36; }
+  F.gout = ''; F.note = ''; $('note').value = '';
+  save('settings', S);
+}
+
+function step(field, dir) {
+  if (field === 'dose') { F.dose = clamp(F.dose + dir, 0, 300); F.tasse = Math.round(F.dose / 10 * 2); }
+  if (field === 'clics') F.clics = clamp(F.clics + dir, 0, 180);
+  if (field === 'temps') F.temps = clamp(F.temps + dir, 1, 120);
+  if (field === 'tasse') F.tasse = clamp(F.tasse + dir, 0, 150);
+  renderForm();
+}
+
+// Appui long = défilement rapide (qui accélère)
+function bindRepeat(btn, fn) {
+  let t; const stop = () => clearTimeout(t);
+  btn.addEventListener('pointerdown', (e) => {
+    e.preventDefault(); fn(); let delay = 350;
+    const loop = () => { fn(); delay = Math.max(30, delay * 0.75); t = setTimeout(loop, delay); };
+    t = setTimeout(loop, delay);
+  });
+  ['pointerup', 'pointerleave', 'pointercancel'].forEach((ev) => btn.addEventListener(ev, stop));
+  btn.addEventListener('contextmenu', (e) => e.preventDefault());
+  btn.addEventListener('click', (e) => { if (e.detail === 0) fn(); }); // clavier
+}
+
+function renderForm() {
+  $('cafeChips').innerHTML = cafes.map((c) =>
+    `<button class="chip ${c.nom === F.cafe ? 'sel' : ''}" data-cafe="${esc(c.nom)}">${esc(c.nom)}</button>`).join('') +
+    `<button class="chip add" id="addCafe">${t('addCoffee')}</button>`;
+  $('editCafeBtn').classList.toggle('hidden', !cafeByName(F.cafe));
+  $('editCafeBtn').textContent = t('editNamed', { n: F.cafe });
+  $('vDose').innerHTML = `${fr(F.dose / 10)}<small> g</small>`;
+  $('vClics').innerHTML = `${F.clics}<small> ${t('clicks', { n: F.clics })}</small>`;
+  $('vTours').textContent = `${tours(F.clics)} · ${F.clics * 16} µm`;
+  $('vTemps').innerHTML = `${F.temps}<small> s</small>`;
+  $('tempsRange').value = clamp(F.temps, 10, 60);
+  $('vTasse').innerHTML = `${F.tasse}<small> g</small>`;
+  const R = F.dose ? F.tasse / (F.dose / 10) : 0;
+  $('vRatio').textContent = F.dose ? `1:${fr(R)}` : '—';
+  const p = profile(cafeByName(F.cafe)?.torrefaction);
+  $('vRatioHint').textContent = F.dose ? (R >= p.lo && R <= p.hi ? '✓' : t('targetRange', { lo: fr(p.lo), hi: fr(p.hi) })) : '';
+  document.querySelectorAll('#tasteBtns button').forEach((b) => b.classList.toggle('sel', b.dataset.gout === F.gout));
+  $('saveBtn').textContent = editingId ? t('saveEdit') : t('saveShot');
+  $('editBanner').classList.toggle('hidden', !editingId);
+}
+
+/* ---------- Ajout / modification d'un café ---------- */
+function cafeDialog(existing) {
+  const c = existing || { nom: '', torrefaction: 'moyenne', date: '' };
+  let roast = norm(c.torrefaction) || 'moyenne';
+  const d = $('dlg');
+  d.innerHTML = `
+    <h3>${existing ? t('editCoffeeT') : t('newCoffee')}</h3>
+    <div class="field"><div>${t('name')}</div><input type="text" id="cNom" value="${esc(c.nom)}" autocomplete="off"></div>
+    <div class="field"><div>${t('roast')}</div>
+      <div class="taste" id="cRoast">${['claire', 'moyenne', 'foncee'].map((r) => `<button type="button" data-r="${r}">${roastName(r)}</button>`).join('')}</div></div>
+    <div class="field"><div>${t('roastDate')}</div><input type="date" id="cDate" value="${esc(c.date)}"></div>
+    <div class="btns"><button class="secondary" id="cCancel">${t('cancel')}</button><button class="primary" id="cOk">${t('save')}</button></div>
+    ${existing ? `<div class="btns"><button class="secondary danger" id="cDel">${t('deleteCoffee')}</button></div>` : ''}`;
+  const paint = () => d.querySelectorAll('#cRoast button').forEach((b) => b.classList.toggle('sel', b.dataset.r === roast));
+  d.querySelectorAll('#cRoast button').forEach((b) => b.onclick = () => { roast = b.dataset.r; paint(); });
+  paint();
+  $('cCancel').onclick = () => d.close();
+  $('cOk').onclick = () => {
+    const nom = $('cNom').value.trim();
+    if (!nom) return toast(t('needName'));
+    if (cafes.some((x) => x.nom === nom && x !== existing)) return toast(t('coffeeExists'));
+    const item = { nom, torrefaction: roastLabel[roast], date: $('cDate').value };
+    if (existing) {
+      const old = existing.nom;
+      Object.assign(existing, item);
+      if (old !== nom) { // on renomme aussi les shots de ce café
+        shots.filter((s) => s.cafe === old).forEach((s) => { s.cafe = nom; });
+        if (next[old]) { next[nom] = next[old]; delete next[old]; }
+        if (F.cafe === old) F.cafe = S.cafe = nom;
+      }
+    } else { cafes.push(item); prefill(nom); }
+    saveAll(); d.close(); renderAll();
+  };
+  if (existing) $('cDel').onclick = async () => {
+    d.close();
+    if (!(await ask({ title: t('deleteCoffeeQ', { n: esc(existing.nom) }), body: t('deleteCoffeeBody'), ok: t('delete'), danger: true }))) return;
+    cafes = cafes.filter((x) => x !== existing);
+    if (F.cafe === existing.nom) prefill(cafes[0]?.nom || '');
+    saveAll(); renderAll();
+  };
+  d.showModal();
+}
+
+/* ---------- Dialogue de confirmation ---------- */
+function ask({ title, body = '', ok = t('confirm'), cancel = t('cancel'), danger = false }) {
+  return new Promise((res) => {
+    const d = $('dlg');
+    d.innerHTML = `<h3>${title}</h3><div>${body}</div>
+      <div class="btns">${cancel ? `<button class="secondary" id="aNo">${cancel}</button>` : ''}<button class="primary ${danger ? 'danger' : ''}" id="aOk">${ok}</button></div>`;
+    const done = (v) => { d.onclose = null; d.close(); res(v); };
+    $('aOk').onclick = () => done(true);
+    if (cancel) $('aNo').onclick = () => done(false);
+    d.onclose = () => res(false);
+    d.showModal();
+  });
+}
+
+/* ---------- Enregistrement ---------- */
+async function onSave() {
+  if (!F.cafe) return ask({ title: t('chooseCoffee'), body: t('chooseCoffeeBody'), ok: t('ok'), cancel: '' });
+  const dose = F.dose / 10;
+  if (dose <= 0) return ask({ title: t('dose0'), body: t('dose0Body'), ok: t('ok'), cancel: '' });
+  const R = F.tasse / dose, issues = [];
+  if (R < 1) issues.push(t('ratioBelow1', { r: fr(R) }));
+  if (R > 4) issues.push(t('ratioAbove4', { r: fr(R) }));
+  if (F.temps > 60) issues.push(t('timeAbove60', { t: F.temps }));
+  if (issues.length && !(await ask({ title: t('confirmQ'), body: `<ul>${issues.map((i) => `<li>${i}</li>`).join('')}</ul>${t('unusual')}`, ok: t('yesSave') }))) return;
+
+  const cafe = cafeByName(F.cafe);
+  const data = { cafe: F.cafe, torrefaction: cafe?.torrefaction || '', dose, tasse: F.tasse, temps: F.temps, clics: F.clics, gout: F.gout, note: $('note').value.trim() };
+
+  if (editingId) {
+    const s = shots.find((x) => String(x.id) === String(editingId));
+    if (s) Object.assign(s, data);
+    editingId = null; saveAll(); prefill(F.cafe); renderAll();
+    toast(t('shotEdited')); showTab('hist');
+    return;
+  }
+  const shot = { id: nextId(), date: today(), heure: nowHM(), ...data };
+  const prev = shotsOf(F.cafe);
+  shots.push(shot);
+  delete next[F.cafe];
+  saveAll();
+  showResult(shot, prev);
+  F.gout = ''; $('note').value = ''; renderAll();
+}
+
+/* =====================================================================
+   5. Moteur de conseils
+   ===================================================================== */
+function analyze(shot, prev) {
+  const T = window.__t;
+  const roast = roastOf(shot), P = profile(roast);
+  const d = shot.dose, y = shot.tasse, t = shot.temps, c = shot.clics, R = y / d;
+  const targetY = Math.round(d * P.target);
+  const ratioOk = R >= P.lo && R <= P.hi;
+  const choked = (t >= 30 && R < 1.2) || (t > 35 && R < 1.5);
+  const out = [];
+  let grind = null; // conseil de mouture principal
+
+  // Temps "équivalent" : si le poids est loin de la cible, on estime la durée qu'aurait eue le shot à la cible
+  let tt = t, est = false;
+  if (!choked && !ratioOk && y > 0) { tt = Math.round(PREINF + (t - PREINF) * targetY / y); est = true; }
+  const when = est ? T('whenEst', { tt, ty: targetY, y, t }) : `${t} s`;
+
+  if (choked) {
+    const dl = R < 1 ? 4 : 3;
+    grind = { prio: 1, param: 'grind', delta: dl, title: T('chokedT'), text: T('chokedX', { y, t, c: c + dl }) };
+  } else if (tt < 22) {
+    const dl = tt < 18 ? -3 : -2;
+    grind = { prio: 2, param: 'grind', delta: dl, title: T('fastT', { w: when }), text: T('fastX', { c: c + dl }) };
+  } else if (tt < TIME_LO) {
+    grind = { prio: 2, param: 'grind', delta: -1, title: T('sfastT', { w: when }), text: T('sfastX', { c: c - 1 }) };
+  } else if (tt > 35) {
+    const dl = tt > 40 ? 3 : 2;
+    grind = { prio: 2, param: 'grind', delta: dl, title: T('slowT', { w: when }), text: T('slowX', { c: c + dl }) };
+  } else if (tt > TIME_HI) {
+    grind = { prio: 2, param: 'grind', delta: 1, title: T('sslowT', { w: when }), text: T('sslowX', { c: c + 1 }) };
+  }
+  if (grind && P.light && grind.delta < 0) grind.text += T('lightFine');
+  if (grind && P.dark && grind.delta > 0) grind.text += T('darkCoarse');
+  if (grind) out.push(grind);
+
+  // Rendement (poids en tasse)
+  let yieldAdv = null;
+  if (!choked && R > P.hi) yieldAdv = { prio: 3, param: 'yield', title: T('longT', { r: fr(R) }), text: T('longX', { y: targetY }) };
+  if (!choked && R < P.lo) yieldAdv = { prio: 3, param: 'yield', title: T('shortT', { r: fr(R) }), text: T('shortX', { y: targetY }) };
+  if (yieldAdv) out.push(yieldAdv);
+
+  const timeOk = t >= TIME_LO && t <= TIME_HI;
+  // Goût
+  if (shot.gout && norm(shot.gout) === 'acide') {
+    if (timeOk && ratioOk) out.push({ prio: 4, param: 'temp', title: T('sourOkT'), text: T('sourOkX') });
+    else if (grind && grind.delta < 0) grind.text += T('alsoSour');
+    else if (yieldAdv && R < P.lo) yieldAdv.text += T('alsoSourY');
+    else if (!grind && !yieldAdv) {
+      const longY = P.light ? Math.round(d * 2.4) : targetY + 2;
+      out.push({ prio: 4, param: 'grind', delta: -1, title: T('underT'),
+        text: T('underX', { c: c - 1, y: longY }) + (P.light ? T('lightOk', { a: fr(2.3), b: fr(2.5) }) : '') });
+    }
+  }
+  if (shot.gout && norm(shot.gout) === 'amer') {
+    if (timeOk && ratioOk) out.push({ prio: 4, param: 'temp', title: T('bitterOkT'), text: T('bitterOkX') });
+    else if (grind && grind.delta > 0) grind.text += T('alsoBitter');
+    else if (yieldAdv && R > P.hi) yieldAdv.text += T('alsoBitterY');
+    else if (!grind && !yieldAdv) {
+      const shortY = P.dark ? Math.round(d * 1.8) : targetY - 2;
+      out.push({ prio: 4, param: 'grind', delta: 1, title: T('overT'),
+        text: T('overX', { c: c + 1, y: shortY }) + (P.dark ? T('darkAim', { a: fr(1.8), b: fr(2.0) }) : '') });
+    }
+  }
+
+  // Régularité : même réglage, temps très différents → préparation du gâteau
+  const eq = (s) => { const r = ratioOf(s); return r >= P.lo && r <= P.hi ? s.temps : Math.round(PREINF + (s.temps - PREINF) * targetY / s.tasse); };
+  const same = prev.filter((s) => s.clics === c && Math.abs(s.dose - d) <= 0.3 && s.tasse > 0 && !((s.temps >= 30 && ratioOf(s) < 1.2))).slice(-2);
+  let inconsistent = false;
+  if (same.length && !choked) {
+    const times = [...same.map(eq), tt];
+    if (Math.max(...times) - Math.min(...times) >= 6) {
+      inconsistent = true;
+      out.push({ prio: 5, param: 'prep', title: T('inconsT'), text: T('inconsX', { c, times: times.map((x) => x + ' s').join(', ') }) });
+    }
+  }
+
+  const success = !choked && timeOk && ratioOk && (!shot.gout || norm(shot.gout) === 'equilibre');
+  if (success) out.unshift({ prio: 0, param: null, title: T('successT'), text: shot.gout ? T('successBal') : T('successTaste') });
+
+  out.sort((a, b) => a.prio - b.prio);
+  const list = out.slice(0, 3);
+  const main = list.find((a) => a.param);
+  const recipe = { dose: d, clics: c, tasse: targetY };
+  if (main && main.delta) recipe.clics = clamp(c + main.delta, 0, 180);
+  return { R, P, ratioOk, timeOk, tt, est, list, main, recipe, inconsistent, yieldOff: !!yieldAdv };
+}
+
+const TIPS = { get length() { return t('tips').length; } };
+const tip = (i) => t('tips')[i];
+function pickTip(shot, a) {
+  const c = cafeByName(shot?.cafe);
+  if (c?.date) {
+    const age = Math.floor((Date.now() - new Date(c.date + 'T12:00')) / 864e5);
+    if (age >= 0 && age < 7) return t('young', { n: age });
+    if (age > 30) return t('old', { n: age });
+  }
+  if (a && norm(shot.gout) === 'amer') return tip(2);
+  if (a && a.inconsistent) return tip(3);
+  S.tipIdx = ((S.tipIdx || 0) + 1) % TIPS.length; save('settings', S);
+  return tip(S.tipIdx);
+}
+
+function gauge(v, min, max, lo, hi, ok) {
+  const p = (x) => clamp((x - min) / (max - min) * 100, 0, 100);
+  return `<div class="gauge"><div class="zone" style="left:${p(lo)}%;width:${p(hi) - p(lo)}%"></div>
+    <div class="mark ${ok ? 'ok' : 'warn'}" style="left:${p(v)}%"></div></div>`;
+}
+
+function showResult(shot, prev) {
+  const a = analyze(shot, prev);
+  const P = a.P, R = a.R;
+  const rStat = a.ratioOk ? `<span class="status ok">${t('inTarget')}</span>`
+    : `<span class="status warn">${R > P.hi ? t('tooLong') : t('tooShort')}</span>`;
+  const tStat = a.timeOk ? `<span class="status ok">${t('inTarget')}</span>`
+    : `<span class="status warn">${shot.temps > TIME_HI ? t('tooSlow') : t('tooFast')}</span>`;
+  const only = a.main
+    ? t('onlyOne', { p: t('param_' + a.main.param) }) + (a.main.param === 'grind' && a.yieldOff ? t('keepDose', { d: fr(shot.dose), y: a.recipe.tasse }) : '')
+    : t('changeNothing');
+  const rec = a.recipe;
+  $('resultInner').innerHTML = `
+    <h2>${esc(shot.cafe)}</h2>
+    <section class="card">
+      <div class="metric"><div><div class="muted small">${t('ratio')}</div><div class="v">1:${fr(R)}</div></div>${rStat}</div>
+      ${gauge(R, 1, 3, P.lo, P.hi, a.ratioOk)}
+      <div class="gscale"><span>1:1</span><span>${t('target')} 1:${fr(P.lo)}–${fr(P.hi)}</span><span>1:3</span></div>
+      <div class="metric" style="margin-top:14px"><div><div class="muted small">${t('time')}</div><div class="v">${shot.temps} s</div></div>${tStat}</div>
+      ${gauge(shot.temps, 15, 45, TIME_LO, TIME_HI, a.timeOk)}
+      <div class="gscale"><span>15 s</span><span>${t('target2530')}</span><span>45 s</span></div>
+    </section>
+    <div class="onlyone">${only}</div>
+    <section class="card"><p class="label">${t('advice')}</p>
+      <ol class="advice">${a.list.map((x) => `<li><b>${esc(x.title)}</b>${esc(x.text)}${x.param ? `<div class="tag">${esc(t('paramTag', { p: t('param_' + x.param) }))}</div>` : ''}</li>`).join('')}</ol>
+    </section>
+    <section class="card"><p class="label">${t('nextRecipe')}</p>
+      <div class="recipe">
+        <div><b>${fr(rec.dose)} g</b><span>${t('doseLbl')}</span></div>
+        <div><b>${rec.clics}</b><span>${t('clicks', { n: rec.clics })} (${tours(rec.clics)})</span></div>
+        <div><b>${rec.tasse} g</b><span>${t('in2530')}</span></div>
+      </div>
+      <button class="primary" id="applyNext">${t('applyNext')}</button>
+    </section>
+    <button class="secondary" id="closeResult">${t('close')}</button>
+    <p class="tip">${esc(pickTip(shot, a))}</p>`;
+  $('applyNext').onclick = () => {
+    next[shot.cafe] = { dose: rec.dose, clics: rec.clics, tasse: rec.tasse }; save('next', next);
+    prefill(shot.cafe); closeResult(); renderAll(); toast(t('recipeApplied'));
+  };
+  $('closeResult').onclick = closeResult;
+  $('result').classList.remove('hidden'); $('result').scrollTop = 0;
+  document.body.style.overflow = 'hidden';
+}
+function closeResult() { $('result').classList.add('hidden'); document.body.style.overflow = ''; window.scrollTo(0, 0); }
+
+/* =====================================================================
+   6. Accueil : meilleur réglage + mini-stats par café
+   ===================================================================== */
+function bestOf(list) {
+  const dist = (s) => Math.abs(ratioOf(s) - 2);
+  const bal = list.filter((s) => norm(s.gout) === 'equilibre');
+  const pool = bal.length ? bal : list.filter((s) => s.temps >= TIME_LO && s.temps <= TIME_HI && ratioOf(s) >= 1.5 && ratioOf(s) <= 2.6);
+  return pool.sort((a, b) => dist(a) - dist(b))[0];
+}
+function spark(vals, lo, hi, band) {
+  if (vals.length < 2) return '<svg viewBox="0 0 100 34"></svg>';
+  const min = Math.min(lo, ...vals), max = Math.max(hi, ...vals), span = max - min || 1;
+  const x = (i) => 4 + i * 92 / (vals.length - 1), y = (v) => 30 - (v - min) / span * 26;
+  const pts = vals.map((v, i) => `${x(i).toFixed(1)},${y(v).toFixed(1)}`).join(' ');
+  const b = band ? `<rect x="0" width="100" y="${y(band[1]).toFixed(1)}" height="${(y(band[0]) - y(band[1])).toFixed(1)}" fill="var(--zone)" opacity=".7"/>` : '';
+  return `<svg viewBox="0 0 100 34" preserveAspectRatio="none">${b}
+    <polyline points="${pts}" fill="none" stroke="var(--accent)" stroke-width="2" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"/></svg>`;
+}
+function renderStats() {
+  const html = cafes.map((c) => {
+    const list = shotsOf(c.nom);
+    const n = list.length, ok = list.filter(inTarget).length;
+    const b = bestOf(list.slice());
+    const last = list.slice(-15);
+    const P = profile(c.torrefaction);
+    return `<button class="best ${c.nom === F.cafe ? 'sel' : ''}" data-best="${esc(c.nom)}">
+      <h3>${esc(c.nom)}</h3>
+      <div class="muted small">${t('best')}${b ? t('tapApply') : ''}</div>
+      <div class="reco">${b ? `<b>${clk(b.clics)}</b> · ${fr(b.dose)} g → ${Math.round(b.tasse)} g · ${b.temps} s` : `<span class="muted">${t('noRef')}</span>`}</div>
+      <div class="stats"><span>${t('nShots', { n })}</span><span>${t('pctTarget', { p: n ? Math.round(ok / n * 100) : 0 })}</span></div>
+      <div class="sparks">
+        <div class="spark"><div class="t"><span>${t('clicks', { n: 2 })}</span><span>${last.at(-1)?.clics ?? ''}</span></div>${spark(last.map((s) => s.clics), last.at(-1)?.clics - 2 || 0, last.at(-1)?.clics + 2 || 1)}</div>
+        <div class="spark"><div class="t"><span>${t('ratio')}</span><span>${last.length ? '1:' + fr(ratioOf(last.at(-1))) : ''}</span></div>${spark(last.map((s) => clamp(ratioOf(s), 0.5, 4)), 1.5, 2.5, [P.lo, P.hi])}</div>
+      </div></button>`;
+  }).join('');
+  $('carousel').innerHTML = html || `<div class="card welcome"><h3>${t('welcomeT')}</h3>
+    <p>${t('welcomeX')}</p>
+    <p class="muted small">${t('welcomeNote')}</p></div>`;
+}
+
+/* =====================================================================
+   7. Historique
+   ===================================================================== */
+let histFilter = '';
+function renderHistory() {
+  const names = [...new Set([...cafes.map((c) => c.nom), ...shots.map((s) => s.cafe)])];
+  $('histFilter').innerHTML = [['', t('all')], ...names.map((n) => [n, n])].map(([v, l]) =>
+    `<button class="chip ${histFilter === v ? 'sel' : ''}" data-filter="${esc(v)}">${esc(l)}</button>`).join('');
+  const list = shots.filter((s) => !histFilter || s.cafe === histFilter).sort((a, b) => sortKey(b).localeCompare(sortKey(a)));
+  $('histList').innerHTML = list.length ? list.map((s) => {
+    const R = ratioOf(s), ok = inTarget(s);
+    const g = goutName(s.gout);
+    return `<div class="card shot">
+      <div class="top"><b>${esc(s.cafe)}</b><span class="muted small">${dateFr(s.date)} · ${esc(s.heure)}</span></div>
+      <div class="vals"><span><span class="dot ${ok ? 'ok' : 'warn'}"></span>1:${fr(R)}</span><span>${fr(s.dose)} g → ${Math.round(s.tasse)} g</span>
+        <span>${s.temps} s</span><span>${clk(s.clics)}</span>${g ? `<span>${esc(g)}</span>` : ''}</div>
+      ${s.note ? `<div class="note">${esc(s.note)}</div>` : ''}
+      <div class="acts"><button data-edit="${esc(s.id)}">${t('edit')}</button><button class="danger" data-del="${esc(s.id)}">${t('delete')}</button></div>
+    </div>`;
+  }).join('') : `<div class="empty">${t('noShots')}</div>`;
+}
+
+function startEdit(id) {
+  const s = shots.find((x) => String(x.id) === String(id)); if (!s) return;
+  editingId = s.id;
+  if (!cafeByName(s.cafe)) { cafes.push({ nom: s.cafe, torrefaction: s.torrefaction || 'moyenne', date: '' }); saveAll(); }
+  F.cafe = s.cafe; F.dose = Math.round(s.dose * 10); F.clics = s.clics; F.temps = s.temps; F.tasse = Math.round(s.tasse);
+  F.gout = Object.keys(goutKey).includes(norm(s.gout)) ? { acide: 'acide', equilibre: 'équilibré', amer: 'amer' }[norm(s.gout)] : '';
+  $('note').value = s.note || '';
+  $('editWhen').textContent = t('editWhen', { d: dateFr(s.date), h: s.heure });
+  showTab('shot'); renderAll(); window.scrollTo(0, 0);
+}
+async function delShot(id) {
+  const s = shots.find((x) => String(x.id) === String(id)); if (!s) return;
+  if (!(await ask({ title: t('deleteShotQ'), body: `${esc(s.cafe)} · ${dateFr(s.date)} ${esc(s.heure)}`, ok: t('delete'), danger: true }))) return;
+  shots = shots.filter((x) => x !== s); saveAll(); renderAll();
+}
+
+function exportCsv() {
+  const q = (v) => { const s = String(v ?? ''); return /[",\n;]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
+  const rows = shots.slice().sort((a, b) => sortKey(a).localeCompare(sortKey(b))).map((s) => toRow(s).map(q).join(','));
+  const csv = '﻿' + [HEADER.join(','), ...rows].join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
+  a.download = `espresso-shots-${today()}.csv`; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 2000);
+}
+
+/* =====================================================================
+   8. Identifiants, export et import CSV
+   ===================================================================== */
+const nextId = () => String(Math.max(0, ...shots.map((s) => parseInt(s.id, 10)).filter((n) => !isNaN(n))) + 1);
+
+// Valeurs exportées : date AAAA-MM-JJ, décimales avec un point
+// Import d'un CSV exporté par l'app (restauration, changement de téléphone).
+// Les shots déjà présents (même date, heure et café) ne sont pas dupliqués.
+function parseCsv(text) {
+  text = text.replace(/^\uFEFF/, '');
+  const sep = (text.split('\n')[0].match(/;/g) || []).length > (text.split('\n')[0].match(/,/g) || []).length ? ';' : ',';
+  const rows = []; let row = [], cur = '', q = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i];
+    if (q) { if (ch === '"') { if (text[i + 1] === '"') { cur += '"'; i++; } else q = false; } else cur += ch; }
+    else if (ch === '"') q = true;
+    else if (ch === sep) { row.push(cur); cur = ''; }
+    else if (ch === '\n' || ch === '\r') { if (ch === '\r' && text[i + 1] === '\n') i++; row.push(cur); rows.push(row); row = []; cur = ''; }
+    else cur += ch;
+  }
+  if (cur || row.length) { row.push(cur); rows.push(row); }
+  return rows.filter((r) => r.some((c) => c.trim()));
+}
+function importCsv(file) {
+  const reader = new FileReader();
+  reader.onload = async () => {
+    const rows = parseCsv(String(reader.result));
+    const head = (rows.shift() || []).map((h) => norm(h));
+    const col = (name) => head.indexOf(name);
+    if (col('date') < 0 || col('cafe') < 0 || col('dose_g') < 0) return ask({ title: t('badFile'), body: t('badFileBody'), ok: t('ok'), cancel: '' });
+    const num = (v) => parseFloat(String(v ?? '').replace(',', '.')) || 0;
+    const get = (r, n) => (col(n) >= 0 ? (r[col(n)] ?? '').trim() : '');
+    const key = (s) => `${s.date} ${s.heure} ${s.cafe}`;
+    const known = new Set(shots.map(key));
+    let added = 0;
+    rows.forEach((r) => {
+      const s = { date: get(r, 'date'), heure: get(r, 'heure'), cafe: get(r, 'cafe'), torrefaction: get(r, 'torrefaction'),
+        dose: num(get(r, 'dose_g')), tasse: num(get(r, 'tasse_g')), temps: num(get(r, 'temps_s')), clics: num(get(r, 'clics_k6')),
+        gout: get(r, 'gout'), note: get(r, 'note') };
+      if (!s.date || !s.cafe || known.has(key(s))) return;
+      s.id = nextId(); shots.push(s); known.add(key(s)); added++;
+      if (!cafeByName(s.cafe)) cafes.push({ nom: s.cafe, torrefaction: s.torrefaction || 'moyenne', date: '' });
+    });
+    saveAll(); if (!F.cafe && cafes[0]) prefill(cafes[0].nom); renderAll();
+    toast(added ? t('imported', { n: added }) : t('noNew'));
+  };
+  reader.readAsText(file);
+}
+
+function toRow(s) {
+  return [s.id, s.date, s.heure, s.cafe, s.torrefaction || '', String(+Number(s.dose).toFixed(1)), Math.round(s.tasse),
+    ratioOf(s).toFixed(2), s.temps, s.clics, s.gout || '', s.note || ''];
+}
+
+
+/* =====================================================================
+   9. Navigation et démarrage
+   ===================================================================== */
+function showTab(t) {
+  $('tabShot').classList.toggle('hidden', t !== 'shot');
+  $('tabHist').classList.toggle('hidden', t !== 'hist');
+  $('tabBtnShot').classList.toggle('sel', t === 'shot');
+  $('tabBtnHist').classList.toggle('sel', t === 'hist');
+  window.scrollTo(0, 0);
+}
+function renderAll() { renderForm(); renderStats(); renderHistory(); }
+
+document.querySelectorAll('[data-step]').forEach((b) => {
+  const [f, d] = b.dataset.step.split(':'); bindRepeat(b, () => step(f, +d));
+});
+$('tempsRange').addEventListener('input', (e) => { F.temps = +e.target.value; renderForm(); });
+$('cafeChips').addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.id === 'addCafe') return cafeDialog(null);
+  if (editingId) { F.cafe = b.dataset.cafe; renderAll(); return; }
+  prefill(b.dataset.cafe); renderAll();
+});
+$('editCafeBtn').onclick = () => cafeByName(F.cafe) && cafeDialog(cafeByName(F.cafe));
+$('tasteBtns').addEventListener('click', (e) => { const b = e.target.closest('button'); if (!b) return; F.gout = F.gout === b.dataset.gout ? '' : b.dataset.gout; renderForm(); });
+$('saveBtn').onclick = onSave;
+$('cancelEdit').onclick = () => { editingId = null; prefill(F.cafe); renderAll(); };
+$('carousel').addEventListener('click', (e) => {
+  const b = e.target.closest('[data-best]'); if (!b) return;
+  const name = b.dataset.best, best = bestOf(shotsOf(name));
+  editingId = null; prefill(name);
+  if (best) { F.dose = Math.round(best.dose * 10); F.clics = best.clics; F.tasse = Math.round(best.tasse); F.temps = best.temps; toast(t('bestApplied')); }
+  renderAll();
+});
+$('histFilter').addEventListener('click', (e) => { const b = e.target.closest('[data-filter]'); if (!b) return; histFilter = b.dataset.filter; renderHistory(); });
+$('histList').addEventListener('click', (e) => {
+  const b = e.target.closest('button'); if (!b) return;
+  if (b.dataset.edit) startEdit(b.dataset.edit);
+  if (b.dataset.del) delShot(b.dataset.del);
+});
+$('csvBtn').onclick = exportCsv;
+$('csvImportBtn').onclick = () => $('csvFile').click();
+$('csvFile').onchange = (e) => { const f = e.target.files[0]; if (f) importCsv(f); e.target.value = ''; };
+$('tabBtnShot').onclick = () => showTab('shot');
+$('tabBtnHist').onclick = () => showTab('hist');
+$('settingsBtn').onclick = () => {
+  const d = $('dlg');
+  d.innerHTML = `<h3>${t('settings')}</h3>
+    <div class="field"><div>${t('language')}</div><select id="langSel">${Object.entries(LANGS).map(([k, v]) => `<option value="${k}" ${k === LANG ? 'selected' : ''}>${v}</option>`).join('')}</select></div>
+    <div class="btns"><button class="primary" id="sOk">${t('close')}</button></div>`;
+  $('langSel').onchange = (e) => { LANG = e.target.value; S.lang = LANG; save('settings', S); applyStatic(); renderAll(); $('formTip').textContent = pickTip(null, null); $('settingsBtn').click(); };
+  $('sOk').onclick = () => d.close();
+  if (!d.open) d.showModal();
+};
+
+window.__t = t;
+applyStatic();
+prefill(cafeByName(S.cafe) ? S.cafe : cafes[0]?.nom || '');
+$('formTip').textContent = pickTip(null, null);
+renderAll();
+
+// Demande à Chrome de ne pas effacer les données de l'app si le téléphone manque de place
+navigator.storage?.persist?.();
+if ('serviceWorker' in navigator) navigator.serviceWorker.register('service-worker.js');
+</script>
+</body>
+</html>
